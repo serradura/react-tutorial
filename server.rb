@@ -26,10 +26,17 @@ server.mount_proc '/api/comments' do |req, res|
   if req.request_method == 'POST'
     # Assume it's well formed
     comment = { id: (Time.now.to_f * 1000).to_i }
-    req.query.each do |key, value|
-      comment[key] = value.force_encoding('UTF-8') unless key == 'id'
+
+    if req.query.empty? && !req.body.empty?
+      comment = comment.merge(JSON.parse(req.body))
+    else
+      req.query.each do |key, value|
+        comment[key] = value.force_encoding('UTF-8') unless key == 'id'
+      end
     end
+
     comments << comment
+
     File.write(
       './comments.json',
       JSON.pretty_generate(comments, indent: '    '),
